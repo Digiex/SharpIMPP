@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
 using System.Text;
 
@@ -17,6 +18,7 @@ namespace SharpIMPP
     {
         const ushort ProtocolVersion = 8;
         const byte startByte = 0x6f;
+        public uint SeqNum = 0;
         public IMPPClient()
         {
 
@@ -25,7 +27,9 @@ namespace SharpIMPP
         public void Connect(string UserName, string UserDomain, string Password)
         {
             var srvRec = DnsSRV.GetSRVRecords("_impp._tcp." + UserDomain).First();
-            TcpClient tcpClient = new TcpClient(srvRec.NameTarget, srvRec.Port);
+            //TcpClient tcpClient = new TcpClient(srvRec.NameTarget, srvRec.Port);
+            TcpClient tcpClient = new TcpClient();
+            tcpClient.Connect(new IPEndPoint(IPAddress.Parse("74.201.34.10"), srvRec.Port));
             Console.WriteLine("Connected to " + srvRec);
             var bigend = new BigEndianStream(tcpClient.GetStream());
             bigend.Write(startByte);
@@ -35,7 +39,7 @@ namespace SharpIMPP
             //bigend.WriteByte(0x08);
             bigend.Flush();
             //TODO: Find out how TLVs work
-            Console.WriteLine("Start byte: "+bigend.ReadByte()); //Start byte
+            Console.WriteLine("Start byte: " + bigend.ReadByte()); //Start byte
             Console.WriteLine("Channel byte: " + bigend.ReadByte()); //Channel byte
             Console.WriteLine("Got version " + bigend.ReadUShort());
             bigend.Flush();
@@ -46,11 +50,8 @@ namespace SharpIMPP
             tp.MessageType = (ushort)StreamTypes.TType.FEATURES_SET;
             tp.MessageFamily = (ushort)StreamTypes.TFamily.STREAM;
             tp.Flags = MessageFlags.MF_REQUEST;
-            tp.SequenceNumber = 1;
-            tp.Block = new TLVPacket.TLVBlock() { Is32 = false, TLVType = (ushort)StreamTypes.TType.FEATURES_SET };
-            tp.Block.Value = new byte[] { 0x00, 0x03 };
-            tp.Block.Length16 = (ushort)tp.Block.Value.Length;
-            tp.BlockSize = tp.Block.GetSize();
+            tp.SequenceNumber = SeqNum + 1;
+            tp.Block = new TLVPacket.TLV[] { new TLVPacket.TLV() { TLVType = 1, Value = new byte[] { 0x00, 0x01 } } };
             tp.Write(bigend);
 
             bigend.Flush();
@@ -58,6 +59,43 @@ namespace SharpIMPP
             Console.WriteLine("Channel byte: " + bigend.ReadByte()); //Channel byte
             tp.Read(bigend);
             bigend.Flush();
+            Console.WriteLine(tp);
+            bool UseSSL = false;
+            foreach (byte b in tp.Block.First().Value)
+            {
+                if (b == (byte)0x01)
+                {
+                    UseSSL = true;
+                }
+            }
+            if (!UseSSL)
+            {
+                Console.WriteLine("Warning! Expected SSL to be used!");
+            }
+            bigend.Flush();
+            bigend.Close();
+            SslStream ss = new SslStream(tcpClient.GetStream());
+            ss.AuthenticateAsClient(srvRec.NameTarget);
+            bigend = new BigEndianStream(ss);
+
+            bigend.Write(startByte);
+            bigend.WriteByte(0x02); //Channel byte
+            tp.MessageType = (ushort)StreamTypes.TType.AUTHENTICATE;
+            tp.MessageFamily = (ushort)StreamTypes.TFamily.STREAM;
+            tp.Flags = MessageFlags.MF_REQUEST;
+            tp.SequenceNumber = SeqNum + 1;
+            var userBytes = ASCIIEncoding.UTF8.GetBytes(UserName);
+            var passBytes = ASCIIEncoding.UTF8.GetBytes(Password);
+            tp.Block = new TLVPacket.TLV[] {
+                new TLVPacket.TLV() { TLVType = 0x0002, Value = new byte[]{ 0x00, 0x01 } } ,
+                new TLVPacket.TLV() { TLVType = 0x0003, Value = userBytes } ,
+                new TLVPacket.TLV() { TLVType = 0x0002, Value = passBytes } ,
+            };
+            tp.Write(bigend);
+
+            Console.WriteLine("Start byte: " + bigend.ReadByte()); //Start byte
+            Console.WriteLine("Channel byte: " + bigend.ReadByte()); //Channel byte
+            tp.Read(bigend);
             Console.WriteLine(tp);
 
             //Just some debug reads to check if we missed something

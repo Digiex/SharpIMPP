@@ -13,7 +13,7 @@ namespace TestApp
         {
             Console.WriteLine(DnsSRV.GetSRVRecords("_impp._tcp.trillian.im").First());
             IMPPClient si = new IMPPClient();
-            si.Connect("user","trillian.im","pass");
+            si.Connect("tricia","trillian.im","password");
             Console.ReadLine();
         }
     }

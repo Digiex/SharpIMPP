@@ -59,18 +59,6 @@ namespace Chraft.Net
             return (Input);
         }
 
-        public byte[] ReadBytes(uint Count)
-        {
-            byte[] Input = new byte[Count];
-
-            for (uint i = Count - 1; i >= 0; i--)
-            {
-                Input[i] = ReadByte();
-            }
-
-            return (Input);
-        }
-
         public sbyte ReadSByte()
         {
             return unchecked((sbyte)ReadByte());
