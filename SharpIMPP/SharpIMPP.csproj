@@ -20,6 +20,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -28,6 +29,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -39,8 +41,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
+    <Compile Include="Enums\AvatarTypes.cs" />
+    <Compile Include="Enums\DeviceTypes.cs" />
+    <Compile Include="Enums\GroupChatTypes.cs" />
+    <Compile Include="Enums\IMTypes.cs" />
+    <Compile Include="Enums\ListTypes.cs" />
+    <Compile Include="Enums\MessageFlags.cs" />
+    <Compile Include="Enums\PresenceTypes.cs" />
+    <Compile Include="Enums\StreamTypes.cs" />
+    <Compile Include="IMPPClient.cs" />
     <Compile Include="DNS\DnsSRV.cs" />
+    <Compile Include="Net\BigEndianStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
