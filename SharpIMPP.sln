@@ -1,7 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpIMPP", "SharpIMPP\SharpIMPP.csproj", "{36562C84-47D3-4A9A-8E9C-28B99FCA913E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpIMPP", "SharpIMPP\SharpIMPP.csproj", "{8542EB25-2820-4E90-9C64-72F88E82F36F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApp", "TestApp\TestApp.csproj", "{D325CBDA-6E30-4859-BFD7-459AE66EECEB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -9,10 +11,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{36562C84-47D3-4A9A-8E9C-28B99FCA913E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{36562C84-47D3-4A9A-8E9C-28B99FCA913E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{36562C84-47D3-4A9A-8E9C-28B99FCA913E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{36562C84-47D3-4A9A-8E9C-28B99FCA913E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8542EB25-2820-4E90-9C64-72F88E82F36F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8542EB25-2820-4E90-9C64-72F88E82F36F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8542EB25-2820-4E90-9C64-72F88E82F36F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8542EB25-2820-4E90-9C64-72F88E82F36F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D325CBDA-6E30-4859-BFD7-459AE66EECEB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D325CBDA-6E30-4859-BFD7-459AE66EECEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D325CBDA-6E30-4859-BFD7-459AE66EECEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D325CBDA-6E30-4859-BFD7-459AE66EECEB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
