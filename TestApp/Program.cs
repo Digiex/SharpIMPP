@@ -11,9 +11,23 @@ namespace TestApp
     {
         static void Main(string[] args)
         {
+            Console.Title = "SharpIMPP Test";
             Console.WriteLine(DnsSRV.GetSRVRecords("_impp._tcp.trillian.im").First());
             IMPPClient si = new IMPPClient();
-            si.Connect("tricia","trillian.im","password");
+            Console.Write("Username (tricia): ");
+            string user = Console.ReadLine();
+            if (user == "")
+            {
+                user = "tricia";
+            }
+            Console.Write("Password (password): ");
+            string pass = Console.ReadLine();
+            Console.Clear();
+            if (pass == "")
+            {
+                pass = "password";
+            }
+            si.Connect(user,"trillian.im",pass);
             Console.ReadLine();
         }
     }

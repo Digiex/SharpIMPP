@@ -50,9 +50,10 @@ namespace SharpIMPP
             tp.MessageType = (ushort)StreamTypes.TType.FEATURES_SET;
             tp.MessageFamily = (ushort)StreamTypes.TFamily.STREAM;
             tp.Flags = MessageFlags.MF_REQUEST;
-            tp.SequenceNumber = SeqNum + 1;
+            tp.SequenceNumber = SeqNum;
             tp.Block = new TLVPacket.TLV[] { new TLVPacket.TLV() { TLVType = 1, Value = new byte[] { 0x00, 0x01 } } };
             tp.Write(bigend);
+            SeqNum++;
 
             bigend.Flush();
             Console.WriteLine("Start byte: " + bigend.ReadByte()); //Start byte
@@ -73,8 +74,8 @@ namespace SharpIMPP
                 Console.WriteLine("Warning! Expected SSL to be used!");
             }
             bigend.Flush();
-            bigend.Close();
-            SslStream ss = new SslStream(tcpClient.GetStream());
+            //bigend.Close();
+            SslStream ss = new SslStream(bigend);
             ss.AuthenticateAsClient(srvRec.NameTarget);
             bigend = new BigEndianStream(ss);
 
@@ -83,15 +84,18 @@ namespace SharpIMPP
             tp.MessageType = (ushort)StreamTypes.TType.AUTHENTICATE;
             tp.MessageFamily = (ushort)StreamTypes.TFamily.STREAM;
             tp.Flags = MessageFlags.MF_REQUEST;
-            tp.SequenceNumber = SeqNum + 1;
+            tp.SequenceNumber = SeqNum;
             var userBytes = ASCIIEncoding.UTF8.GetBytes(UserName);
             var passBytes = ASCIIEncoding.UTF8.GetBytes(Password);
+            Password = null; //We don't need this anymore!
             tp.Block = new TLVPacket.TLV[] {
                 new TLVPacket.TLV() { TLVType = 0x0002, Value = new byte[]{ 0x00, 0x01 } } ,
                 new TLVPacket.TLV() { TLVType = 0x0003, Value = userBytes } ,
-                new TLVPacket.TLV() { TLVType = 0x0002, Value = passBytes } ,
+                new TLVPacket.TLV() { TLVType = 0x4001, Value = passBytes } ,
             };
+            passBytes = null; //We don't need this anymore!
             tp.Write(bigend);
+            SeqNum++;
 
             Console.WriteLine("Start byte: " + bigend.ReadByte()); //Start byte
             Console.WriteLine("Channel byte: " + bigend.ReadByte()); //Channel byte

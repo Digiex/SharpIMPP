@@ -49,6 +49,7 @@ namespace SharpIMPP.Net.Packets
             s.Write(MessageFamily);
             s.Write(MessageType);
             s.Write(SequenceNumber);
+            BlockSize = 0;
             foreach (TLV t in Block)
             {
                 BlockSize += t.GetSize();
