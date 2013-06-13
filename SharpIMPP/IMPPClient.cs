@@ -1,5 +1,7 @@
 ﻿using Chraft.Net;
 using SharpIMPP.DNS;
+using SharpIMPP.Enums;
+using SharpIMPP.Net.Packets;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -28,13 +30,38 @@ namespace SharpIMPP
             var bigend = new BigEndianStream(tcpClient.GetStream());
             bigend.Write(startByte);
             bigend.WriteByte(0x01);
-            bigend.Write((short)ProtocolVersion);
+            bigend.Write(ProtocolVersion);
             //bigend.WriteByte(0x00);
             //bigend.WriteByte(0x08);
+            bigend.Flush();
             //TODO: Find out how TLVs work
             bigend.ReadByte(); //Start byte
             bigend.ReadByte(); //Channel byte
-            Console.WriteLine("Got version "+bigend.ReadShort());
+            Console.WriteLine("Got version " + bigend.ReadUShort());
+            bigend.Flush();
+            bigend.Write(startByte);
+            bigend.WriteByte(0x02); //Channel byte
+            TLVPacket tp = new TLVPacket();
+            tp.MessageType = (ushort)StreamTypes.TType.FEATURES_SET;
+            tp.MessageFamily = (ushort)StreamTypes.TFamily.STREAM;
+            tp.Flags = MessageFlags.MF_REQUEST;
+            tp.SequenceNumber = 1;
+            tp.Block = new TLVPacket.TLVBlock() { Is32 = false, TLVType = (ushort)StreamTypes.TType.FEATURES_SET };
+            tp.Block.Value = new byte[] { 0x00, 0x03 };
+            tp.Block.Length16 = (ushort)tp.Block.Value.Length;
+            tp.BlockSize = tp.Block.GetSize();
+            tp.Write(bigend);
+            bigend.Flush();
+            tp.Read(bigend);
+            bigend.Flush();
+            Console.WriteLine(tp);
+
+            //Just some reads to check if we missed something
+            Console.WriteLine(bigend.ReadByte());
+            Console.WriteLine(bigend.ReadByte());
+            Console.WriteLine(bigend.ReadByte());
+            Console.WriteLine(bigend.ReadByte());
+            Console.WriteLine(bigend.ReadByte());
         }
     }
 }

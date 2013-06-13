@@ -10,11 +10,11 @@ namespace SharpIMPP.Enums
         /* Message flags.
          */
 
-        public const byte MF_REQUEST = 0x0000;
-        public const byte MF_RESPONSE = 0x0001;
-        public const byte MF_INDICATION = 0x0002;
-        public const byte MF_ERROR = 0x0004;
-        public const byte MF_EXTENSION = 0x0008;
+        public const ushort MF_REQUEST = 0x0000;
+        public const ushort MF_RESPONSE = 0x0001;
+        public const ushort MF_INDICATION = 0x0002;
+        public const ushort MF_ERROR = 0x0004;
+        public const ushort MF_EXTENSION = 0x0008;
 
         /* Global error codes.
          */

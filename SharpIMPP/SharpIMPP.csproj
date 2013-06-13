@@ -52,6 +52,7 @@
     <Compile Include="IMPPClient.cs" />
     <Compile Include="DNS\DnsSRV.cs" />
     <Compile Include="Net\BigEndianStream.cs" />
+    <Compile Include="Net\Packets\TLVPacket.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

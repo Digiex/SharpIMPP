@@ -13,26 +13,26 @@ namespace SharpIMPP.Enums
 
         public const byte MECHANISM_PASSWORD = 0x01;
 
-        enum TFamily
+        public enum TFamily
         {
-            STREAM = 0x0001
+            STREAM = (ushort)0x0001
         };
 
-        enum TType
+        public enum TType
         {
-            FEATURES_SET = 0x0001,
-            AUTHENTICATE = 0x0002,
-            PING = 0x0003
+            FEATURES_SET = (ushort)0x0001,
+            AUTHENTICATE = (ushort)0x0002,
+            PING = (ushort)0x0003
         };
 
-        enum TErrorcode
+        public enum TErrorcode
         {
             FEATURE_INVALID = 0x8001,
             MECHANISM_INVALID = 0x8002,
             AUTHENTICATION_INVALID = 0x8003
         };
 
-        enum TTupleType
+        public enum TTupleType
         {
             ERRORCODE = 0x0000,
             FEATURES = 0x0001,

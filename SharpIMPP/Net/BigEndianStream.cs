@@ -59,6 +59,18 @@ namespace Chraft.Net
             return (Input);
         }
 
+        public byte[] ReadBytes(uint Count)
+        {
+            byte[] Input = new byte[Count];
+
+            for (uint i = Count - 1; i >= 0; i--)
+            {
+                Input[i] = ReadByte();
+            }
+
+            return (Input);
+        }
+
         public sbyte ReadSByte()
         {
             return unchecked((sbyte)ReadByte());
@@ -69,15 +81,31 @@ namespace Chraft.Net
             return unchecked((short)((ReadByte() << 8) | ReadByte()));
         }
 
+        public ushort ReadUShort()
+        {
+            return unchecked((ushort)((ReadByte() << 8) | ReadByte()));
+        }
+
         public int ReadInt()
         {
             return unchecked((ReadByte() << 24) | (ReadByte() << 16) | (ReadByte() << 8) | ReadByte());
+        }
+
+        public uint ReadUInt()
+        {
+            return unchecked((uint)((ReadByte() << 24) | (ReadByte() << 16) | (ReadByte() << 8) | ReadByte()));
         }
 
         public long ReadLong()
         {
             return unchecked((ReadByte() << 56) | (ReadByte() << 48) | (ReadByte() << 40) | (ReadByte() << 32)
                 | (ReadByte() << 24) | (ReadByte() << 16) | (ReadByte() << 8) | ReadByte());
+        }
+
+        public ulong ReadULong()
+        {
+            return unchecked((ulong)((ReadByte() << 56) | (ReadByte() << 48) | (ReadByte() << 40) | (ReadByte() << 32)
+                | (ReadByte() << 24) | (ReadByte() << 16) | (ReadByte() << 8) | ReadByte()));
         }
 
         public unsafe float ReadFloat()
@@ -139,6 +167,12 @@ namespace Chraft.Net
             Write(unchecked((byte)data));
         }
 
+        public void Write(ushort data)
+        {
+            Write(unchecked((byte)(data >> 8)));
+            Write(unchecked((byte)data));
+        }
+
         public void Write(int data)
         {
             Write(unchecked((byte)(data >> 24)));
@@ -147,7 +181,27 @@ namespace Chraft.Net
             Write(unchecked((byte)data));
         }
 
+        public void Write(uint data)
+        {
+            Write(unchecked((byte)(data >> 24)));
+            Write(unchecked((byte)(data >> 16)));
+            Write(unchecked((byte)(data >> 8)));
+            Write(unchecked((byte)data));
+        }
+
         public void Write(long data)
+        {
+            Write(unchecked((byte)(data >> 56)));
+            Write(unchecked((byte)(data >> 48)));
+            Write(unchecked((byte)(data >> 40)));
+            Write(unchecked((byte)(data >> 32)));
+            Write(unchecked((byte)(data >> 24)));
+            Write(unchecked((byte)(data >> 16)));
+            Write(unchecked((byte)(data >> 8)));
+            Write(unchecked((byte)data));
+        }
+
+        public void Write(ulong data)
         {
             Write(unchecked((byte)(data >> 56)));
             Write(unchecked((byte)(data >> 48)));
