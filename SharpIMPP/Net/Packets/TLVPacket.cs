@@ -30,6 +30,8 @@ namespace SharpIMPP.Net.Packets
             BlockSize = s.ReadUInt();
             Block = new TLVBlock();
             Block.Read(s, BlockSize);
+            //byte[] block = s.ReadBytes(BlockSize);
+            //Console.WriteLine(BitConverter.ToString(block));
         }
         public void Write(BigEndianStream s)
         {

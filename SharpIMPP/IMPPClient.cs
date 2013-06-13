@@ -35,10 +35,11 @@ namespace SharpIMPP
             //bigend.WriteByte(0x08);
             bigend.Flush();
             //TODO: Find out how TLVs work
-            bigend.ReadByte(); //Start byte
-            bigend.ReadByte(); //Channel byte
+            Console.WriteLine("Start byte: "+bigend.ReadByte()); //Start byte
+            Console.WriteLine("Channel byte: " + bigend.ReadByte()); //Channel byte
             Console.WriteLine("Got version " + bigend.ReadUShort());
             bigend.Flush();
+
             bigend.Write(startByte);
             bigend.WriteByte(0x02); //Channel byte
             TLVPacket tp = new TLVPacket();
@@ -51,12 +52,15 @@ namespace SharpIMPP
             tp.Block.Length16 = (ushort)tp.Block.Value.Length;
             tp.BlockSize = tp.Block.GetSize();
             tp.Write(bigend);
+
             bigend.Flush();
+            Console.WriteLine("Start byte: " + bigend.ReadByte()); //Start byte
+            Console.WriteLine("Channel byte: " + bigend.ReadByte()); //Channel byte
             tp.Read(bigend);
             bigend.Flush();
             Console.WriteLine(tp);
 
-            //Just some reads to check if we missed something
+            //Just some debug reads to check if we missed something
             Console.WriteLine(bigend.ReadByte());
             Console.WriteLine(bigend.ReadByte());
             Console.WriteLine(bigend.ReadByte());
