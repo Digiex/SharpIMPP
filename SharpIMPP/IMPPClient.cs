@@ -13,7 +13,7 @@ namespace SharpIMPP
     //IMPP Protocol documentation: https://www.trillian.im/impp/
     public class IMPPClient
     {
-        const UInt16 ProtocolVersion = 8;
+        const ushort ProtocolVersion = 8;
         const byte startByte = 0x6f;
         public IMPPClient()
         {
@@ -27,9 +27,14 @@ namespace SharpIMPP
             Console.WriteLine("Connected to " + srvRec);
             var bigend = new BigEndianStream(tcpClient.GetStream());
             bigend.Write(startByte);
-            bigend.Write(0x01);
-            bigend.Write(ProtocolVersion);
+            bigend.WriteByte(0x01);
+            bigend.Write((short)ProtocolVersion);
+            //bigend.WriteByte(0x00);
+            //bigend.WriteByte(0x08);
             //TODO: Find out how TLVs work
+            bigend.ReadByte(); //Start byte
+            bigend.ReadByte(); //Channel byte
+            Console.WriteLine("Got version "+bigend.ReadShort());
         }
     }
 }
