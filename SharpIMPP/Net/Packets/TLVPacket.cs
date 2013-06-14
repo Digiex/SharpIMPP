@@ -30,16 +30,23 @@ namespace SharpIMPP.Net.Packets
             MessageType = s.ReadUShort();
             SequenceNumber = s.ReadUInt();
             BlockSize = s.ReadUInt();
-            uint left = BlockSize;
-            ArrayList bList = new ArrayList();
-            while (left > 0)
+            if (BlockSize == 0)
             {
-                var b = new TLV();
-                b.Read(s);
-                bList.Add(b);
-                left -= b.GetSize();
+                Block = new TLV[0];
             }
-            Block = (TLV[])bList.ToArray(typeof(TLV));
+            else
+            {
+                uint left = BlockSize;
+                ArrayList bList = new ArrayList();
+                while (left > 0)
+                {
+                    var b = new TLV();
+                    b.Read(s);
+                    bList.Add(b);
+                    left -= b.GetSize();
+                }
+                Block = (TLV[])bList.ToArray(typeof(TLV));
+            }
             //byte[] block = s.ReadBytes(BlockSize);
             //Console.WriteLine(BitConverter.ToString(block));
         }

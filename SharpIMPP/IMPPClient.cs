@@ -137,6 +137,34 @@ namespace SharpIMPP
             Console.WriteLine(tp);
 
 
+            bigend.Write(startByte);
+            bigend.WriteByte(0x02); //Channel byte
+            tp.MessageType = (ushort)ListTypes.TType.GET;
+            tp.MessageFamily = (ushort)ListTypes.TFamily.LISTS;
+            tp.Flags = MessageFlags.MF_REQUEST;
+            tp.SequenceNumber = SeqNum;
+            tp.Block = new TLVPacket.TLV[] { };
+            tp.Write(bigend);
+            SeqNum++;
+
+            Console.WriteLine("Start byte: " + bigend.ReadByte()); //Start byte
+            Console.WriteLine("Channel byte: " + bigend.ReadByte()); //Channel byte
+            tp.Read(bigend);
+            Console.WriteLine(tp);
+            Console.WriteLine("Your friends:");
+            ushort lasttype = 0;
+            foreach (TLVPacket.TLV t in tp.Block)
+            {
+                if (lasttype != t.TLVType)
+                {
+                    Console.WriteLine();
+                    Console.Write(((ListTypes.TTupleType)t.TLVType).ToString() + ": ");
+                    lasttype = t.TLVType;
+                }
+                var v = t.Value.Reverse();
+                Console.Write(ASCIIEncoding.UTF8.GetString(v.ToArray()) + ", ");
+            }
+
             //Just some debug reads to check if we missed something
             Console.WriteLine(bigend.ReadByte());
             Console.WriteLine(bigend.ReadByte());

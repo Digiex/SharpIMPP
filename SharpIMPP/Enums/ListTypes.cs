@@ -9,12 +9,12 @@ namespace SharpIMPP.Enums
     {
         public const int MAX_OBJECTS = 1000;
 
-        enum TFamily
+        public enum TFamily
         {
             LISTS = 0x0003
         };
 
-        enum TType
+        public enum TType
         {
             GET = 0x0001,
             CONTACT_ADD = 0x0002,
@@ -29,7 +29,7 @@ namespace SharpIMPP.Enums
             BLOCK_REMOVE = 0x000b
         };
 
-        enum TErrorcode
+        public enum TErrorcode
         {
             LIST_LIMIT_EXCEEDED = 0x8001,
             ADDRESS_EXISTS = 0x8002,
@@ -38,7 +38,7 @@ namespace SharpIMPP.Enums
             ADDRESS_INVALID = 0x8005
         };
 
-        enum TTupleType
+        public enum TTupleType
         {
             ERRORCODE = 0x0000,
             FROM = 0x0001,
