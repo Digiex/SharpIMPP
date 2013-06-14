@@ -146,14 +146,40 @@ namespace SharpIMPP.Net.Packets
             }
             public override string ToString()
             {
-                return "{TLVType: " + TLVType + (Is32 ? ", Length32: " + Length : ", Length16: " + Length) + ", Value: " + Value + "}";
+                StringBuilder sb = new StringBuilder();
+                sb.Append("{TLVType: " + TLVType + (Is32 ? ", Length32: " + Length : ", Length16: " + Length) + ", Value: byte[");
+                int i = 0;
+                foreach (byte b in Value)
+                {
+                    i++;
+                    sb.AppendFormat("{0:x2}", b);
+                    if (i != Value.Length)
+                    {
+                        sb.Append(", ");
+                    }
+                }
+                    sb.Append("]}");
+                return sb.ToString();
             }
 
         }
         public override string ToString()
         {
-            return ("{Flags: " + Flags + ", MessageFamily: " + MessageFamily + ", MessageType: " + MessageType
-                + ", SequenceNumber: " + SequenceNumber + ", BlockSize: " + BlockSize + ", Block: " + Block + "}");
+            StringBuilder sb = new StringBuilder();
+                sb.Append("{Flags: " + Flags + ", MessageFamily: " + MessageFamily + ", MessageType: " + MessageType
+                + ", SequenceNumber: " + SequenceNumber + ", BlockSize: " + BlockSize + ", Block: TLV[");
+                int i = 0;
+                foreach (TLV t in Block)
+                {
+                    i++;
+                    sb.Append(t.ToString());
+                    if (i != Block.Length)
+                    {
+                        sb.Append(", ");
+                    }
+                }
+            sb.Append("]}");
+                return sb.ToString();
         }
     }
 }

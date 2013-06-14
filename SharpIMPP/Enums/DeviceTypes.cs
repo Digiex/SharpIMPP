@@ -7,19 +7,19 @@ namespace SharpIMPP.Enums
 {
     public class DeviceTypes
     {
-        enum TFamily
+        public enum TFamily
         {
             DEVICE = 0x0002
         };
 
-        enum TType
+        public enum TType
         {
             BIND = 0x0001,
             UPDATE = 0x0002,
             UNBIND = 0x0003
         };
 
-        enum TErrorcode
+        public enum TErrorcode
         {
             CLIENT_INVALID = 0x8001,
             DEVICE_COLLISION = 0x8002,
@@ -27,7 +27,7 @@ namespace SharpIMPP.Enums
             DEVICE_BOUND_ELSEWHERE = 0x8004
         };
 
-        enum TTupleType
+        public enum TTupleType
         {
             ERRORCODE = 0x0000,
             CLIENT_NAME = 0x0001,
