@@ -8,8 +8,9 @@ using System.Text;
 
 namespace SharpIMPP.Net.Packets
 {
-    class TLVPacket
+    class TLVPacket : Packet
     {
+        public const byte TLVChannelByte = 0x02;
         #region TLV Headers
         public ushort Flags { get; set; }
         public ushort MessageFamily { get; set; }
@@ -23,8 +24,10 @@ namespace SharpIMPP.Net.Packets
         {
 
         }
-        public void Read(BigEndianStream s)
+        public override void Read(BigEndianStream s)
         {
+            s.ReadByte(); //Start byte
+            s.ReadByte(); //Channel byte
             Flags = s.ReadUShort();
             MessageFamily = s.ReadUShort();
             MessageType = s.ReadUShort();
@@ -50,8 +53,10 @@ namespace SharpIMPP.Net.Packets
             //byte[] block = s.ReadBytes(BlockSize);
             //Console.WriteLine(BitConverter.ToString(block));
         }
-        public void Write(BigEndianStream s)
+        public override void Write(BigEndianStream s)
         {
+            s.WriteByte(StartByte);
+            s.WriteByte(TLVChannelByte);
             s.Write(Flags);
             s.Write(MessageFamily);
             s.Write(MessageType);

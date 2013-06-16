@@ -15,14 +15,14 @@ namespace SharpIMPP.Enums
 
         public enum TFamily
         {
-            STREAM = (ushort)0x0001
+            STREAM = 0x0001
         };
 
         public enum TType
         {
-            FEATURES_SET = (ushort)0x0001,
-            AUTHENTICATE = (ushort)0x0002,
-            PING = (ushort)0x0003
+            FEATURES_SET = 0x0001,
+            AUTHENTICATE = 0x0002,
+            PING = 0x0003
         };
 
         public enum TErrorcode

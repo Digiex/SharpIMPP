@@ -16,8 +16,6 @@ namespace SharpIMPP
     //IMPP Protocol documentation: https://www.trillian.im/impp/
     public class IMPPClient
     {
-        const ushort ProtocolVersion = 8;
-        const byte startByte = 0x6f;
         public uint SeqNum = 0;
         public IMPPClient()
         {
@@ -27,25 +25,18 @@ namespace SharpIMPP
         public void Connect(string UserName, string UserDomain, string Password)
         {
             var srvRec = DnsSRV.GetSRVRecords("_impp._tcp." + UserDomain).First();
-            //TcpClient tcpClient = new TcpClient(srvRec.NameTarget, srvRec.Port);
-            TcpClient tcpClient = new TcpClient();
-            tcpClient.Connect(new IPEndPoint(IPAddress.Parse("74.201.34.10"), srvRec.Port));
+            TcpClient tcpClient = new TcpClient(srvRec.NameTarget, srvRec.Port);
+            //TcpClient tcpClient = new TcpClient();
+            //tcpClient.Connect(new IPEndPoint(IPAddress.Parse("74.201.34.10"), srvRec.Port));
             Console.WriteLine("Connected to " + srvRec);
             var bigend = new BigEndianStream(tcpClient.GetStream());
-            bigend.Write(startByte);
-            bigend.WriteByte(0x01);
-            bigend.Write(ProtocolVersion);
-            //bigend.WriteByte(0x00);
-            //bigend.WriteByte(0x08);
-            bigend.Flush();
-            //TODO: Find out how TLVs work
-            Console.WriteLine("Start byte: " + bigend.ReadByte()); //Start byte
-            Console.WriteLine("Channel byte: " + bigend.ReadByte()); //Channel byte
-            Console.WriteLine("Got version " + bigend.ReadUShort());
+
+            var vp = new VersionPacket();
+            vp.Write(bigend);
+            vp.Read(bigend);
+            Console.WriteLine("Got version " + vp.ReadProtocolVersion);
             bigend.Flush();
 
-            bigend.Write(startByte);
-            bigend.WriteByte(0x02); //Channel byte
             TLVPacket tp = new TLVPacket();
             tp.MessageType = (ushort)StreamTypes.TType.FEATURES_SET;
             tp.MessageFamily = (ushort)StreamTypes.TFamily.STREAM;
@@ -56,8 +47,6 @@ namespace SharpIMPP
             SeqNum++;
 
             bigend.Flush();
-            Console.WriteLine("Start byte: " + bigend.ReadByte()); //Start byte
-            Console.WriteLine("Channel byte: " + bigend.ReadByte()); //Channel byte
             tp.Read(bigend);
             bigend.Flush();
             Console.WriteLine(tp);
@@ -73,14 +62,15 @@ namespace SharpIMPP
             {
                 Console.WriteLine("Warning! Expected SSL to be used!");
             }
-            bigend.Flush();
-            //bigend.Close();
-            SslStream ss = new SslStream(bigend);
-            ss.AuthenticateAsClient(srvRec.NameTarget);
-            bigend = new BigEndianStream(ss);
+            else
+            {
+                bigend.Flush();
+                //bigend.Close();
+                SslStream ss = new SslStream(bigend);
+                ss.AuthenticateAsClient(srvRec.NameTarget);
+                bigend = new BigEndianStream(ss);
+            }
 
-            bigend.Write(startByte);
-            bigend.WriteByte(0x02); //Channel byte
             tp.MessageType = (ushort)StreamTypes.TType.AUTHENTICATE;
             tp.MessageFamily = (ushort)StreamTypes.TFamily.STREAM;
             tp.Flags = MessageFlags.MF_REQUEST;
@@ -94,13 +84,9 @@ namespace SharpIMPP
             tp.Write(bigend);
             SeqNum++;
 
-            Console.WriteLine("Start byte: " + bigend.ReadByte()); //Start byte
-            Console.WriteLine("Channel byte: " + bigend.ReadByte()); //Channel byte
             tp.Read(bigend);
             Console.WriteLine(tp);
 
-            bigend.Write(startByte);
-            bigend.WriteByte(0x02); //Channel byte
             tp.MessageType = (ushort)DeviceTypes.TType.BIND;
             tp.MessageFamily = (ushort)DeviceTypes.TFamily.DEVICE;
             tp.Flags = MessageFlags.MF_REQUEST;
@@ -131,14 +117,10 @@ namespace SharpIMPP
             tp.Write(bigend);
             SeqNum++;
 
-            Console.WriteLine("Start byte: " + bigend.ReadByte()); //Start byte
-            Console.WriteLine("Channel byte: " + bigend.ReadByte()); //Channel byte
             tp.Read(bigend);
             Console.WriteLine(tp);
 
 
-            bigend.Write(startByte);
-            bigend.WriteByte(0x02); //Channel byte
             tp.MessageType = (ushort)ListTypes.TType.GET;
             tp.MessageFamily = (ushort)ListTypes.TFamily.LISTS;
             tp.Flags = MessageFlags.MF_REQUEST;
@@ -147,8 +129,6 @@ namespace SharpIMPP
             tp.Write(bigend);
             SeqNum++;
 
-            Console.WriteLine("Start byte: " + bigend.ReadByte()); //Start byte
-            Console.WriteLine("Channel byte: " + bigend.ReadByte()); //Channel byte
             tp.Read(bigend);
             Console.WriteLine(tp);
             Console.WriteLine("Your friends:");
