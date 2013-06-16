@@ -42,7 +42,7 @@ namespace SharpIMPP
             tp.MessageFamily = (ushort)StreamTypes.TFamily.STREAM;
             tp.Flags = MessageFlags.MF_REQUEST;
             tp.SequenceNumber = SeqNum;
-            tp.Block = new TLVPacket.TLV[] { new TLVPacket.TLV() { TLVType = 1, Value = new byte[] { 0x00, 0x01 } } };
+            tp.Block = new TLV[] { new TLV() { TLVType = 1, Value = new byte[] { 0x00, 0x01 } } };
             tp.Write(bigend);
             SeqNum++;
 
@@ -75,10 +75,10 @@ namespace SharpIMPP
             tp.MessageFamily = (ushort)StreamTypes.TFamily.STREAM;
             tp.Flags = MessageFlags.MF_REQUEST;
             tp.SequenceNumber = SeqNum;
-            tp.Block = new TLVPacket.TLV[] {
-                new TLVPacket.TLV() { TLVType = 0x0002, Value = new byte[]{ 0x00, 0x01 } } ,
-                new TLVPacket.TLV() { TLVType = 0x0003, Value = ASCIIEncoding.UTF8.GetBytes(UserName) } ,
-                new TLVPacket.TLV() { TLVType = 0x4001, Value = ASCIIEncoding.UTF8.GetBytes(Password) } ,
+            tp.Block = new TLV[] {
+                new TLV() { TLVType = 0x0002, Value = new byte[]{ 0x00, 0x01 } } ,
+                new StringTLV() { TLVType = 0x0003, Value = UserName } ,
+                new StringTLV() { TLVType = 0x4001, Value = Password } ,
             };
             Password = null; //We don't need this anymore!
             tp.Write(bigend);
@@ -101,18 +101,18 @@ namespace SharpIMPP
                     os = "Unix";
                     break;
             }
-            tp.Block = new TLVPacket.TLV[] {
-                new TLVPacket.TLV() { TLVType = 0x0001, Value = ASCIIEncoding.UTF8.GetBytes("SharpIMPP") } , //Client name
-                new TLVPacket.TLV() { TLVType = 0x0002, Value = ASCIIEncoding.UTF8.GetBytes(os) } , //OS Name
-                new TLVPacket.TLV() { TLVType = 0x0004, Value = ASCIIEncoding.UTF8.GetBytes(Environment.Is64BitOperatingSystem ? "amd64" : "i386") } , //Processor architecture
-                new TLVPacket.TLV() { TLVType = 0x0005, Value = new byte[] { 0x00, 0x01 } } , //Client version
-                new TLVPacket.TLV() { TLVType = 0x0006, Value = new byte[] { 0x00, 0x01 } } , //Build Number
-                new TLVPacket.TLV() { TLVType = 0x0008, Value = ASCIIEncoding.UTF8.GetBytes(Environment.MachineName) } , //Machine name
-                new TLVPacket.TLV() { TLVType = 0x000b, Value = new byte[] { 0x00, 0x01 } } , //Unknown, 00 01 in docs
-                new TLVPacket.TLV() { TLVType = 0x0010, Value = new byte[] { 0x00 } } , //Unknown, 00 in docs
-                new TLVPacket.TLV() { TLVType = 0x000d, Value = new byte[] { 0x00 , 0x01 , 0x42 , 0x04 , 0x00 , 0x02 , 0x42 , 0x09 , 0x42 ,
+            tp.Block = new TLV[] {
+                new StringTLV() { TLVType = 0x0001, Value = "SharpIMPP" } , //Client name
+                new StringTLV() { TLVType = 0x0002, Value = os } , //OS Name
+                new StringTLV() { TLVType = 0x0004, Value = Environment.Is64BitOperatingSystem ? "amd64" : "i386" } , //Processor architecture
+                new TLV() { TLVType = 0x0005, Value = new byte[] { 0x00, 0x01 } } , //Client version
+                new TLV() { TLVType = 0x0006, Value = new byte[] { 0x00, 0x01 } } , //Build Number
+                new StringTLV() { TLVType = 0x0008, Value = Environment.MachineName } , //Machine name
+                new TLV() { TLVType = 0x000b, Value = new byte[] { 0x00, 0x01 } } , //Unknown, 00 01 in docs
+                new TLV() { TLVType = 0x0010, Value = new byte[] { 0x00 } } , //Unknown, 00 in docs
+                new TLV() { TLVType = 0x000d, Value = new byte[] { 0x00 , 0x01 , 0x42 , 0x04 , 0x00 , 0x02 , 0x42 , 0x09 , 0x42 ,
                                                                              0x03 , 0x42 , 0x06 , 0x42 , 0x05 , 0x42 , 0x07 , 0x42 , 0x08 } } , //Unknown, 00 01 42 04 00 02 42 09 42 03 42 06 42 05 42 07 42 08 in docs
-                new TLVPacket.TLV() { TLVType = 0x0007, Value = ASCIIEncoding.UTF8.GetBytes("SharpIMPP/"+Environment.OSVersion.Platform.ToString()+" 1.0.0.1") } , //Full version string
+                new StringTLV() { TLVType = 0x0007, Value = "SharpIMPP/"+Environment.OSVersion.Platform.ToString()+" 1.0.0.1" } , //Full version string
             };
             tp.Write(bigend);
             SeqNum++;
@@ -125,7 +125,7 @@ namespace SharpIMPP
             tp.MessageFamily = (ushort)ListTypes.TFamily.LISTS;
             tp.Flags = MessageFlags.MF_REQUEST;
             tp.SequenceNumber = SeqNum;
-            tp.Block = new TLVPacket.TLV[] { };
+            tp.Block = new TLV[] { };
             tp.Write(bigend);
             SeqNum++;
 
@@ -133,7 +133,7 @@ namespace SharpIMPP
             Console.WriteLine(tp);
             Console.WriteLine("Your friends:");
             ushort lasttype = 0;
-            foreach (TLVPacket.TLV t in tp.Block)
+            foreach (TLV t in tp.Block)
             {
                 if (lasttype != t.TLVType)
                 {
@@ -141,8 +141,7 @@ namespace SharpIMPP
                     Console.Write(((ListTypes.TTupleType)t.TLVType).ToString() + ": ");
                     lasttype = t.TLVType;
                 }
-                var v = t.Value.Reverse();
-                Console.Write(ASCIIEncoding.UTF8.GetString(v.ToArray()) + ", ");
+                Console.Write(ASCIIEncoding.UTF8.GetString(t.Value) + ", ");
             }
 
             //Just some debug reads to check if we missed something

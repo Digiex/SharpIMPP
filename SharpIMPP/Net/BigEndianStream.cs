@@ -59,6 +59,18 @@ namespace Chraft.Net
             return (Input);
         }
 
+        public byte[] ReadBytesReversed(int Count)
+        {
+            byte[] Input = new byte[Count];
+
+            for (int i = 0; i < Count; i++)
+            {
+                Input[i] = ReadByte();
+            }
+
+            return (Input);
+        }
+
         public sbyte ReadSByte()
         {
             return unchecked((sbyte)ReadByte());
