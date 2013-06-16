@@ -27,8 +27,19 @@ namespace TestApp
             {
                 pass = "password";
             }
-            si.Connect(user,"trillian.im",pass);
+            si.Connect(user, "trillian.im", pass);
+            si.ListReceived += si_ListReceived;
             Console.ReadLine();
         }
+
+        static void si_ListReceived(object sender, IMPPClient.ListEventArgs e)
+        {
+            Console.WriteLine("Got contacts:");
+            foreach (var pair in e.ContactList)
+            {
+                Console.WriteLine(pair.ContactType.ToString() + ": " + pair.ContactName);
+            }
+        }
+
     }
 }

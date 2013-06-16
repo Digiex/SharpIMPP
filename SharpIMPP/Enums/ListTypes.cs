@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SharpIMPP.Enums
 {
-    class ListTypes
+    public class ListTypes
     {
         public const int MAX_OBJECTS = 1000;
 

@@ -3,6 +3,7 @@ using SharpIMPP.DNS;
 using SharpIMPP.Enums;
 using SharpIMPP.Net.Packets;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,6 +11,7 @@ using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 
 namespace SharpIMPP
 {
@@ -17,12 +19,32 @@ namespace SharpIMPP
     public class IMPPClient
     {
         public uint SeqNum = 0;
+        Thread ConnectionThread;
+        #region Events
+        public event ListEvent ListReceived;
+        public delegate void ListEvent(object sender, ListEventArgs e);
+        public class ListEventArgs : EventArgs
+        {
+            public List<ContactListItem> ContactList { get; set; }
+        }
+        public class ContactListItem
+        {
+            public ListTypes.TTupleType ContactType { get; set; }
+            public string ContactName { get; set; }
+        }
+        #endregion
         public IMPPClient()
         {
 
         }
 
         public void Connect(string UserName, string UserDomain, string Password)
+        {
+            ConnectionThread = new Thread(() => connectInThread(UserName, UserDomain, Password));
+            ConnectionThread.Start();
+        }
+
+        private void connectInThread(string UserName, string UserDomain, string Password)
         {
             var srvRec = DnsSRV.GetSRVRecords("_impp._tcp." + UserDomain).First();
             TcpClient tcpClient = new TcpClient(srvRec.NameTarget, srvRec.Port);
@@ -131,25 +153,23 @@ namespace SharpIMPP
 
             tp.Read(bigend);
             Console.WriteLine(tp);
-            Console.WriteLine("Your friends:");
-            ushort lasttype = 0;
-            foreach (TLV t in tp.Block)
+            if (ListReceived != null)
             {
-                if (lasttype != t.TLVType)
+                List<ContactListItem> contacts = new List<ContactListItem>();
+                foreach (TLV t in tp.Block)
                 {
-                    Console.WriteLine();
-                    Console.Write(((ListTypes.TTupleType)t.TLVType).ToString() + ": ");
-                    lasttype = t.TLVType;
+                    contacts.Add(new ContactListItem() { ContactType = (ListTypes.TTupleType)t.TLVType, ContactName = Encoding.UTF8.GetString(t.Value) });
                 }
-                Console.Write(ASCIIEncoding.UTF8.GetString(t.Value) + ", ");
+                ListReceived(this, new ListEventArgs() { ContactList = contacts });
+
             }
 
             //Just some debug reads to check if we missed something
-            Console.WriteLine(bigend.ReadByte());
-            Console.WriteLine(bigend.ReadByte());
-            Console.WriteLine(bigend.ReadByte());
-            Console.WriteLine(bigend.ReadByte());
-            Console.WriteLine(bigend.ReadByte());
+            //Console.WriteLine(bigend.ReadByte());
+            //Console.WriteLine(bigend.ReadByte());
+            //Console.WriteLine(bigend.ReadByte());
+            //Console.WriteLine(bigend.ReadByte());
+            //Console.WriteLine(bigend.ReadByte());
         }
     }
 }

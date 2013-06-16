@@ -52,7 +52,6 @@
     <Compile Include="IMPPClient.cs" />
     <Compile Include="DNS\DnsSRV.cs" />
     <Compile Include="Net\BigEndianStream.cs" />
-    <Compile Include="Net\ConnectionManager.cs" />
     <Compile Include="Net\Packets\Packet.cs" />
     <Compile Include="Net\Packets\TLVPacket.cs" />
     <Compile Include="Net\Packets\TLVs.cs" />
