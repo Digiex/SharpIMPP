@@ -24,10 +24,13 @@ namespace SharpIMPP.Net.Packets
         {
 
         }
-        public override void Read(BigEndianStream s)
+        public override void Read(BigEndianStream s, bool inclHeader = true)
         {
-            s.ReadByte(); //Start byte
-            s.ReadByte(); //Channel byte
+            if (inclHeader)
+            {
+                s.ReadByte(); //Start byte
+                s.ReadByte(); //Channel byte
+            }
             Flags = s.ReadUShort();
             MessageFamily = s.ReadUShort();
             MessageType = s.ReadUShort();
@@ -53,42 +56,51 @@ namespace SharpIMPP.Net.Packets
             //byte[] block = s.ReadBytes(BlockSize);
             //Console.WriteLine(BitConverter.ToString(block));
         }
-        public override void Write(BigEndianStream s)
+        public override void Write(BigEndianStream s, bool inclHeader = true)
         {
-            s.WriteByte(StartByte);
-            s.WriteByte(TLVChannelByte);
+            if (inclHeader)
+            {
+                s.WriteByte(StartByte);
+                s.WriteByte(TLVChannelByte);
+            }
             s.Write(Flags);
             s.Write(MessageFamily);
             s.Write(MessageType);
             s.Write(SequenceNumber);
             BlockSize = 0;
-            foreach (TLV t in Block)
+            if (Block != null)
             {
-                BlockSize += t.GetSize();
+                foreach (TLV t in Block)
+                {
+                    BlockSize += t.GetSize();
+                }
             }
             s.Write(BlockSize);
-            foreach (TLV t in Block)
+            if (Block != null)
             {
-                t.Write(s);
+                foreach (TLV t in Block)
+                {
+                    t.Write(s);
+                }
             }
         }
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-                sb.Append("{Flags: " + Flags + ", MessageFamily: " + MessageFamily + ", MessageType: " + MessageType
-                + ", SequenceNumber: " + SequenceNumber + ", BlockSize: " + BlockSize + ", Block: TLV[");
-                int i = 0;
-                foreach (TLV t in Block)
+            sb.Append("{Flags: " + Flags + ", MessageFamily: " + MessageFamily + ", MessageType: " + MessageType
+            + ", SequenceNumber: " + SequenceNumber + ", BlockSize: " + BlockSize + ", Block: TLV[");
+            int i = 0;
+            foreach (TLV t in Block)
+            {
+                i++;
+                sb.Append(t.ToString());
+                if (i != Block.Length)
                 {
-                    i++;
-                    sb.Append(t.ToString());
-                    if (i != Block.Length)
-                    {
-                        sb.Append(", ");
-                    }
+                    sb.Append(", ");
                 }
+            }
             sb.Append("]}");
-                return sb.ToString();
+            return sb.ToString();
         }
     }
 }

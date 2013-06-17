@@ -5,21 +5,21 @@ using System.Text;
 
 namespace SharpIMPP.Enums
 {
-    class PresenceTypes
+    public class PresenceTypes
     {
-        enum TFamily
+        public enum TFamily
         {
             PRESENCE = 0x0005
         };
 
-        enum TType
+        public enum TType
         {
             SET = 0x0001,
             GET = 0x0002,
             UPDATE = 0x0003
         };
 
-        enum TTupleType
+        public enum TTupleType
         {
             ERRORCODE = 0x0000,
             FROM = 0x0001,

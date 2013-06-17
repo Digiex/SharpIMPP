@@ -3,43 +3,54 @@ using SharpIMPP.DNS;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows.Forms;
 
 namespace TestApp
 {
     class Program
     {
+        [STAThread]
         static void Main(string[] args)
         {
+            AllocConsole();
             Console.Title = "SharpIMPP Test";
             Console.WriteLine(DnsSRV.GetSRVRecords("_impp._tcp.trillian.im").First());
-            IMPPClient si = new IMPPClient();
-            Console.Write("Username (tricia): ");
-            string user = Console.ReadLine();
-            if (user == "")
-            {
-                user = "tricia";
-            }
-            Console.Write("Password (password): ");
-            string pass = Console.ReadLine();
-            Console.Clear();
-            if (pass == "")
-            {
-                pass = "password";
-            }
-            si.Connect(user, "trillian.im", pass);
-            si.ListReceived += si_ListReceived;
+
+
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new Form1());
+            Console.WriteLine("Form exited");
             Console.ReadLine();
+            FreeConsole();
         }
 
-        static void si_ListReceived(object sender, IMPPClient.ListEventArgs e)
-        {
-            Console.WriteLine("Got contacts:");
-            foreach (var pair in e.ContactList)
-            {
-                Console.WriteLine(pair.ContactType.ToString() + ": " + pair.ContactName);
-            }
-        }
+        // http://msdn.microsoft.com/en-us/library/ms681944(VS.85).aspx
+        /// <summary>
+        /// Allocates a new console for the calling process.
+        /// </summary>
+        /// <returns>nonzero if the function succeeds; otherwise, zero.</returns>
+        /// <remarks>
+        /// A process can be associated with only one console,
+        /// so the function fails if the calling process already has a console.
+        /// </remarks>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern int AllocConsole();
+
+        // http://msdn.microsoft.com/en-us/library/ms683150(VS.85).aspx
+        /// <summary>
+        /// Detaches the calling process from its console.
+        /// </summary>
+        /// <returns>nonzero if the function succeeds; otherwise, zero.</returns>
+        /// <remarks>
+        /// If the calling process is not already attached to a console,
+        /// the error code returned is ERROR_INVALID_PARAMETER (87).
+        /// </remarks>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern int FreeConsole();
+
 
     }
 }

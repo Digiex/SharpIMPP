@@ -46,7 +46,7 @@
     <Compile Include="Enums\GroupChatTypes.cs" />
     <Compile Include="Enums\IMTypes.cs" />
     <Compile Include="Enums\ListTypes.cs" />
-    <Compile Include="Enums\MessageFlags.cs" />
+    <Compile Include="Enums\Globals.cs" />
     <Compile Include="Enums\PresenceTypes.cs" />
     <Compile Include="Enums\StreamTypes.cs" />
     <Compile Include="IMPPClient.cs" />

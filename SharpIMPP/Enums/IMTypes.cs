@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SharpIMPP.Enums
 {
-    class IMTypes
+    public class IMTypes
     {
         /* IMPP capability blocks.
  */
@@ -13,26 +13,26 @@ namespace SharpIMPP.Enums
         public const byte CAPABILITY_IM = 0x0001;
         public const byte CAPABILITY_TYPING = 0x0002;
 
-        enum TFamily
+        public enum TFamily
         {
             IM = 0x0004
         };
 
-        enum TType
+        public enum TType
         {
             OFFLINE_MESSAGES_GET = 0x0001,
             OFFLINE_MESSAGES_DELETE = 0x0002,
             MESSAGE_SEND = 0x0003
         };
 
-        enum TErrorcode
+        public enum TErrorcode
         {
             USERNAME_BLOCKED = 0x8001,
             USERNAME_NOT_CONTACT = 0x8002,
             INVALID_CAPABILITY = 0x8003
         };
 
-        enum TTupleType
+        public enum TTupleType
         {
             ERRORCODE = 0x0000,
             FROM = 0x0001,
