@@ -39,6 +39,7 @@
             this.sendButton = new System.Windows.Forms.Button();
             this.label4 = new System.Windows.Forms.Label();
             this.toLabel = new System.Windows.Forms.Label();
+            this.messageList = new System.Windows.Forms.ListView();
             this.SuspendLayout();
             // 
             // usernameBox
@@ -140,11 +141,21 @@
             this.toLabel.TabIndex = 10;
             this.toLabel.Text = "-";
             // 
+            // messageList
+            // 
+            this.messageList.Location = new System.Drawing.Point(249, 22);
+            this.messageList.Name = "messageList";
+            this.messageList.Size = new System.Drawing.Size(375, 335);
+            this.messageList.TabIndex = 11;
+            this.messageList.UseCompatibleStateImageBehavior = false;
+            this.messageList.View = System.Windows.Forms.View.List;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(636, 411);
+            this.Controls.Add(this.messageList);
             this.Controls.Add(this.toLabel);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.sendButton);
@@ -177,5 +188,6 @@
         private System.Windows.Forms.Button sendButton;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Label toLabel;
+        private System.Windows.Forms.ListView messageList;
     }
 }

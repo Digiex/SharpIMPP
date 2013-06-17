@@ -49,6 +49,33 @@ namespace SharpIMPP
             public ListTypes.TTupleType ContactType { get; set; }
             public string ContactName { get; set; }
         }
+
+        public event ContactStatusEvent ContactStatusChanged;
+        public delegate void ContactStatusEvent(object sender, ContactStatusEventArgs e);
+        public class ContactStatusEventArgs : EventArgs
+        {
+            public string Nick { get; set; }
+
+            public byte Status { get; set; }
+
+            public string StatusMessage { get; set; }
+
+            internal TLVPacket Packet { get; set; }
+
+            public string Username { get; set; }
+        }
+
+        public event ChatEvent ChatReceived;
+        public delegate void ChatEvent(object sender, ChatEventArgs e);
+        public class ChatEventArgs : EventArgs
+        {
+            public string From { get; set; }
+            public string To { get; set; }
+            public bool OfflineMessage { get; set; }
+            public string Message { get; set; }
+
+            internal TLVPacket Packet { get; set; }
+        }
         #endregion
 
         private BigEndianStream stream;
@@ -139,7 +166,6 @@ namespace SharpIMPP
                 new StringTLV() { TLVType = 0x0003, Value = UserName } ,
                 new StringTLV() { TLVType = 0x4001, Value = Password } ,
             };
-            Password = null; //We don't need this anymore!
             tp.Write(stream);
 
             tp.Read(stream);
@@ -169,7 +195,7 @@ namespace SharpIMPP
                 new StringTLV() { TLVType = 0x0008, Value = Environment.MachineName } , //Machine name
                 new TLV() { TLVType = 0x000b, Value = new byte[] { 0x00, 0x01 } } , //Status
                 new TLV() { TLVType = 0x0010, Value = new byte[] { 0x01 } } , //IS_STATUS_AUTOMATIC
-                new TLV() { TLVType = 0x000d, Value = new byte[] { 0x00, 0x01 } } , //Capabilities
+                new TLV() { TLVType = 0x000d, Value = new byte[] { 0x00, 0x01, 0x00, 0x02 } } , //Capabilities
                 new StringTLV() { TLVType = 0x0007, Value = "SharpIMPP/"+Environment.OSVersion.Platform.ToString()+" 1.0.0.1" } , //Description
             };
             tp.Write(stream);
@@ -182,7 +208,7 @@ namespace SharpIMPP
             {
                 if (t.TLVType == 0)
                 {
-                    if (t.Value == new byte[] { 80, 04 })
+                    if (t.Value.Length == 2 && t.Value[0] == 128 && t.Value[1] == 4)
                     {
                         reconnect = true;
                     }
@@ -203,9 +229,12 @@ namespace SharpIMPP
             if (reconnect && IP != null)
             {
                 tcpClient.GetStream().Dispose();
+                WriteDebugLine("Reconnecting to " + IP);
                 connectInThread(UserName, UserDomain, Password, IP);
                 return;
             }
+
+            Password = null; //We don't need this anymore!
 
             tp = new TLVPacket();
             tp.MessageType = (ushort)ListTypes.TType.GET;
@@ -301,14 +330,32 @@ namespace SharpIMPP
                 WriteDebugLine("Start byte: " + stream.ReadByte());
                 WriteDebugLine("Channel byte: " + stream.ReadByte());
                 tp.Read(stream, false);
-                if (tp.MessageType == (ushort)PresenceTypes.TType.GET && tp.MessageFamily == (ushort)PresenceTypes.TFamily.PRESENCE)
+                bool error = false;
+                foreach (TLV t in tp.Block)
+                {
+                    if (t.TLVType == 0)
+                    {
+                        WriteDebugLine("Error: " + tp);
+                        error = true;
+                    }
+                }
+
+                if (tp.MessageType == (ushort)PresenceTypes.TType.UPDATE && tp.MessageFamily == (ushort)PresenceTypes.TFamily.PRESENCE)
                 {
                     String str = "User:";
+                    ContactStatusEventArgs csea = new ContactStatusEventArgs();
+                    csea.Packet = tp;
                     foreach (TLV t in tp.Block)
                     {
                         if (t.TLVType == (ushort)PresenceTypes.TTupleType.NICKNAME)
                         {
-                            str += " Nick: " + Encoding.UTF8.GetString(t.Value);
+                            csea.Nick = Encoding.UTF8.GetString(t.Value);
+                            str += " Nick: " + csea.Nick;
+                        }
+                        else if (t.TLVType == (ushort)PresenceTypes.TTupleType.FROM)
+                        {
+                            csea.Username = Encoding.UTF8.GetString(t.Value);
+                            str += " Username: " + csea.Username;
                         }
                         else if (t.TLVType == 16385)
                         {
@@ -316,12 +363,18 @@ namespace SharpIMPP
                         }
                         else if (t.TLVType == (ushort)PresenceTypes.TTupleType.STATUS)
                         {
-                            str += " Status: " + t.Value.Last();
+                            csea.Status = t.Value.Last();
+                            str += " Status: " + csea.Status;
                         }
                         else if (t.TLVType == (ushort)PresenceTypes.TTupleType.STATUS_MESSAGE)
                         {
-                            str += " Message: " + Encoding.UTF8.GetString(t.Value);
+                            csea.StatusMessage = Encoding.UTF8.GetString(t.Value);
+                            str += " Message: " + csea.StatusMessage;
                         }
+                    }
+                    if (ContactStatusChanged != null)
+                    {
+                        RaiseEventOnUIThread(this.ContactStatusChanged, new object[] { this, csea });
                     }
                     WriteDebugLine(str);
                 }
@@ -329,7 +382,33 @@ namespace SharpIMPP
                 {
                     WriteDebugLine("Pong");
                 }
-                else
+                else if (tp.MessageFamily == (ushort)IMTypes.TFamily.IM && tp.MessageType == (ushort)IMTypes.TType.MESSAGE_SEND)
+                {
+                    string from = "";
+                    string to = "";
+                    string msg = "";
+                    foreach (TLV t in tp.Block)
+                    {
+                        if (t.TLVType == (ushort)IMTypes.TTupleType.FROM)
+                        {
+                            from = Encoding.UTF8.GetString(t.Value);
+                        }
+                        else if (t.TLVType == (ushort)IMTypes.TTupleType.TO)
+                        {
+                            to = Encoding.UTF8.GetString(t.Value);
+                        }
+                        else if (t.TLVType == (ushort)IMTypes.TTupleType.MESSAGE_CHUNK)
+                        {
+                            msg = Encoding.UTF8.GetString(t.Value);
+                        }
+                    }
+                    WriteDebugLine("Chat message from " + from + " to " + to + ": " + msg);
+                    if (ChatReceived != null)
+                    {
+                        RaiseEventOnUIThread(this.ChatReceived, new object[] { this, new ChatEventArgs() { From = from, To = to, OfflineMessage = false, Message = msg, Packet = tp } });
+                    }
+                }
+                else if (!error)
                 {
                     WriteDebugLine(tp);
                 }
@@ -385,10 +464,10 @@ namespace SharpIMPP
                 new StringTLV() { TLVType = 0x0001, Value = user } , //To
                 new StringTLV() { TLVType = 0x0002, Value =  username } , //From
                 new TLV() { TLVType = 0x0003, Value = new byte[] { 0x00, 0x01 } } , //CAPABILITY
-                new TLV() { TLVType = 0x0004, Value = new byte[] { 0x00, 0x00, 0x00, 0x00 } } , //MESSAGE_ID
+                new TLV() { TLVType = 0x0004, Value = BitConverter.GetBytes(tp.SequenceNumber).Reverse().ToArray() } , //MESSAGE_ID
                 new TLV() { TLVType = 0x0005, Value = BitConverter.GetBytes(message.Length).Reverse().ToArray() } , //MESSAGE_SIZE
                 new StringTLV() { TLVType = 0x0006, Value =  message } , //MESSAGE_CHUNK
-                new TLV() { TLVType = 0x0007, Value =  BitConverter.GetBytes(DateTime.UtcNow.Ticks).Reverse().ToArray() } , //CREATED_AT
+                //new TLV() { TLVType = 0x0007, Value =  BitConverter.GetBytes(DateTime.UtcNow.Ticks).Reverse().ToArray() } , //CREATED_AT
             };
             tp.Write(stream);
 
