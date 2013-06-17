@@ -18,26 +18,31 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+#if WINDOWS
 using System.Net.Sockets;
+#elif NETFX_CORE
+using Windows.Networking.Sockets;
+using Windows.Storage.Streams;
+using System.Threading.Tasks;
+#endif
 using System.IO;
 using System.IO.Compression;
 
 namespace Chraft.Net
 {
+#if WINDOWS
     public class BigEndianStream : Stream
     {
         public Stream FileStream { get; private set; }
-
+            public BigEndianStream(Stream stream)
+        {
+            FileStream = stream;
+        }
         public override bool CanRead { get { return FileStream.CanRead; } }
         public override bool CanSeek { get { return FileStream.CanSeek; } }
         public override bool CanWrite { get { return FileStream.CanWrite; } }
         public override long Length { get { return FileStream.Length; } }
         public override long Position { get { return FileStream.Position; } set { FileStream.Position = value; } }
-
-        public BigEndianStream(Stream stream)
-        {
-            FileStream = stream;
-        }
 
         public new byte ReadByte()
         {
@@ -132,7 +137,7 @@ namespace Chraft.Net
             byte[] b = new byte[len * 2];
             for (int i = 0; i < len * 2; i++)
                 b[i] = (byte)ReadByte();
-            return ASCIIEncoding.BigEndianUnicode.GetString(b);
+            return Encoding.BigEndianUnicode.GetString(b, 0, b.Length);
         }
 
         public string ReadString8(short maxLen)
@@ -143,7 +148,7 @@ namespace Chraft.Net
             byte[] b = new byte[len];
             for (int i = 0; i < len; i++)
                 b[i] = (byte)ReadByte();
-            return ASCIIEncoding.UTF8.GetString(b);
+            return Encoding.UTF8.GetString(b, 0, b.Length);
         }
 
         public bool ReadBool()
@@ -225,14 +230,14 @@ namespace Chraft.Net
 
         public void Write(string data)
         {
-            byte[] b = ASCIIEncoding.BigEndianUnicode.GetBytes(data);
+            byte[] b = Encoding.BigEndianUnicode.GetBytes(data);
             Write((short)data.Length);
             Write(b, 0, b.Length);
         }
 
         public void Write8(string data)
         {
-            byte[] b = ASCIIEncoding.UTF8.GetBytes(data);
+            byte[] b = Encoding.UTF8.GetBytes(data);
             Write((short)b.Length);
             Write(b, 0, b.Length);
         }
@@ -277,4 +282,169 @@ namespace Chraft.Net
             Write((int)(d * 32.0));
         }
     }
+#elif NETFX_CORE
+    public class BigEndianStream
+    {
+        public DataReader Reader { get; private set; }
+        public DataWriter Writer { get; private set; }
+        public StreamSocket Socket { get; private set; }
+        public BigEndianStream(StreamSocket HostClient)
+        {
+            Reader = new DataReader(HostClient.InputStream);
+            Reader.InputStreamOptions = InputStreamOptions.Partial;
+            Writer = new DataWriter(HostClient.OutputStream);
+            Socket = HostClient;
+            Reader.ByteOrder = ByteOrder.BigEndian;
+            Writer.ByteOrder = ByteOrder.BigEndian;
+        }
+
+
+        public void WriteByte(byte b)
+        {
+            Writer.WriteByte(b);
+            Writer.StoreAsync().AsTask().Wait();
+        }
+
+        public void Write(byte o)
+        {
+            Writer.WriteByte(o);
+            Writer.StoreAsync().AsTask().Wait();
+        }
+
+        public void Write(ushort o)
+        {
+            Writer.WriteUInt16(o);
+            Writer.StoreAsync().AsTask().Wait();
+        }
+
+        public void Write(uint o)
+        {
+            Writer.WriteUInt32(o);
+            Writer.StoreAsync().AsTask().Wait();
+        }
+
+        public void Write(ulong o)
+        {
+            Writer.WriteUInt64(o);
+            Writer.StoreAsync().AsTask().Wait();
+        }
+
+        public void Write(bool o)
+        {
+            Writer.WriteBoolean(o);
+            Writer.StoreAsync().AsTask().Wait();
+        }
+
+        public void Write(double o)
+        {
+            Writer.WriteDouble(o);
+            Writer.StoreAsync().AsTask().Wait();
+        }
+
+        public void Write(short o)
+        {
+            Writer.WriteInt16(o);
+            Writer.StoreAsync().AsTask().Wait();
+        }
+
+        public void Write(int o)
+        {
+            Writer.WriteInt32(o);
+            Writer.StoreAsync().AsTask().Wait();
+        }
+
+        public void Write(long o)
+        {
+            Writer.WriteInt64(o);
+            Writer.StoreAsync().AsTask().Wait();
+        }
+
+        public byte ReadByte()
+        {
+            Reader.LoadAsync(1).AsTask<uint>().Wait();
+            return Reader.ReadByte();
+        }
+
+        public ushort ReadUShort()
+        {
+            Reader.LoadAsync(2).AsTask<uint>().Wait();
+            return Reader.ReadUInt16();
+        }
+
+        public uint ReadUInt()
+        {
+            Reader.LoadAsync(4).AsTask<uint>().Wait();
+            return Reader.ReadUInt32();
+        }
+
+        public ulong ReadULong()
+        {
+            Reader.LoadAsync(8).AsTask<uint>().Wait();
+            return Reader.ReadUInt64();
+        }
+
+        public short ReadShort()
+        {
+            Reader.LoadAsync(2).AsTask<uint>().Wait();
+            return Reader.ReadInt16();
+        }
+
+        public int ReadInt()
+        {
+            Reader.LoadAsync(4).AsTask<uint>().Wait();
+            return Reader.ReadInt32();
+        }
+
+        public long ReadLong()
+        {
+            Reader.LoadAsync(8).AsTask<uint>().Wait();
+            return Reader.ReadInt64();
+        }
+
+        public byte[] ReadBytesReversed(int Count)
+        {
+            Reader.LoadAsync((uint)Count).AsTask<uint>().Wait();
+            byte[] val = new byte[Count];
+            Reader.ReadBytes(val);
+            return val;
+        }
+
+
+        public void Flush()
+        {
+            Socket.OutputStream.FlushAsync().AsTask().Wait();
+        }
+        public void Write(byte[] Buffer, int Offset, int Len)
+        {
+            if (Offset != 0 || Len != Buffer.Length) throw new ArgumentException("Can only write whole byte array");
+            Writer.WriteBytes(Buffer);
+            Writer.StoreAsync().AsTask().Wait();
+            //return Buffer.Length;
+        }
+
+        public int Read(byte[] Buffer, int Offset, int Len)
+        {
+            if (Offset != 0 || Len != Buffer.Length) throw new ArgumentException("Can only read whole byte array");
+            Task<uint> Tk = Reader.LoadAsync((uint)Len).AsTask<uint>();
+            Tk.Wait();
+            uint Count = Tk.Result;
+            for (int i = 0; i < Count; i++)
+            {
+                Buffer[i] = Reader.ReadByte();
+            }
+            return (int)Count;
+        }
+
+        public bool CanRead { get { return Reader != null; } }
+
+        internal void Dispose()
+        {
+            Reader.Dispose();
+            Writer.Dispose();
+            Socket.Dispose();
+        }
+
+        public bool CanWrite { get { return Writer != null; } }
+    }
+#endif
 }

@@ -16,7 +16,7 @@ namespace SharpIMPP.Net.Packets
             {
                 _tlvtype = value;
                 bool msb = getmsb(_tlvtype);
-                Console.WriteLine("Most significant bit: " + (msb ? 1 : 0));
+                //Console.WriteLine("Most significant bit: " + (msb ? 1 : 0));
                 if (msb)
                 {
                     Is32 = true;
@@ -118,11 +118,11 @@ namespace SharpIMPP.Net.Packets
         {
             get
             {
-                return ASCIIEncoding.UTF8.GetString(base.Value);
+                return Encoding.UTF8.GetString(base.Value, 0, base.Value.Length);
             }
             set
             {
-                base.Value = ASCIIEncoding.UTF8.GetBytes(value);
+                base.Value = Encoding.UTF8.GetBytes(value);
             }
         }
     }

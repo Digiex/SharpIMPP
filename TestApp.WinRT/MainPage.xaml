@@ -8,6 +8,13 @@
     mc:Ignorable="d">
 
     <Grid Background="{StaticResource ApplicationPageBackgroundThemeBrush}">
+        <TextBox x:Name="usernameBox" HorizontalAlignment="Left" Margin="64,71,0,0" TextWrapping="Wrap" Text="Username" VerticalAlignment="Top"/>
+        <PasswordBox x:Name="passwordBox" HorizontalAlignment="Left" Margin="64,108,0,0" VerticalAlignment="Top"/>
+        <Button x:Name="loginButton" Content="Login" HorizontalAlignment="Left" Margin="70,145,0,0" VerticalAlignment="Top" RenderTransformOrigin="-3.577,-2.76" Click="loginButton_Click"/>
+        <ListView x:Name="contactList" HorizontalAlignment="Left" Height="718" Margin="264,40,0,0" VerticalAlignment="Top" Width="268"/>
+        <ListView x:Name="chatList" HorizontalAlignment="Left" Height="621" Margin="718,26,0,0" VerticalAlignment="Top" Width="619"/>
+        <Button x:Name="sendButton" Content="Send" HorizontalAlignment="Left" Margin="1190,704,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="messageBox" HorizontalAlignment="Left" Margin="922,710,0,0" TextWrapping="Wrap" Text="Message" VerticalAlignment="Top" Width="243"/>
 
     </Grid>
 </Page>

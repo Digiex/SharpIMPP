@@ -10,6 +10,7 @@ namespace SharpIMPP.DNS
 {
     public class DnsSRV
     {
+#if WINDOWS
         [DllImport("dnsapi", EntryPoint = "DnsQuery_W", CharSet = CharSet.Unicode, SetLastError = true, ExactSpelling = true)]
         private static extern int DnsQuery([MarshalAs(UnmanagedType.VBByRefStr)]ref string pszName, QueryTypes wType, QueryOptions options, int aipServers, ref IntPtr ppQueryResults, int pReserved);
 
@@ -109,7 +110,8 @@ namespace SharpIMPP.DNS
             public short wPort;
             public short Pad;
         }
-
+          
+#endif
         public class SRVRecord
         {
             public string NameTarget { get; private set; }
@@ -129,6 +131,6 @@ namespace SharpIMPP.DNS
                 return NameTarget+":"+Port;
             }
         }
-
+      
     }
 }

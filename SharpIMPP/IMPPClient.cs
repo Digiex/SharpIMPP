@@ -17,7 +17,9 @@ using System.Text;
 using System.Threading;
 #if NETFX_CORE
 using Windows.System.Threading;
-using SharpIMPP.WinRT.Net;
+using System.Threading.Tasks;
+using Windows.Networking.Sockets;
+using Windows.Networking;
 #endif
 
 namespace SharpIMPP
@@ -95,13 +97,14 @@ namespace SharpIMPP
             ConnectionThread = new Thread(() => connectInThread(UserName, UserDomain, Password));
             ConnectionThread.Start();
 #elif NETFX_CORE
-            ThreadPool.RunAsync((source) => { connectInThread(UserName, UserDomain, Password); });
+            Task.Run(() => { connectInThread(UserName, UserDomain, Password); });
 #endif
         }
 
         private void connectInThread(string UserName, string UserDomain, string Password, string IP = null)
         {
             username = UserName;
+#if WINDOWS
             var srvRec = DnsSRV.GetSRVRecords("_impp._tcp." + UserDomain).First();
             TcpClient tcpClient;
             if (IP == null)
@@ -116,6 +119,24 @@ namespace SharpIMPP
             WriteDebugLine("Connected to " + srvRec);
             tcpClient.GetStream().ReadTimeout = Timeout.Infinite;
             stream = new BigEndianStream(tcpClient.GetStream());
+#elif NETFX_CORE
+            //TODO: Fix this
+            var srvRec = new DnsSRV.SRVRecord("impp.trillian.im", 0, 0, 3158);
+            var sock = new StreamSocket();
+            HostName host;
+            if (IP == null)
+            {
+                host = new HostName(srvRec.NameTarget);
+            }
+            else
+            {
+                host = new HostName(IP);
+            }
+            Task Tsk = sock.ConnectAsync(host, srvRec.Port.ToString()).AsTask();
+            Tsk.Wait();
+            stream = new BigEndianStream(sock);
+#endif
+
             var vp = new VersionPacket();
             vp.Write(stream);
             vp.Read(stream);
@@ -151,9 +172,13 @@ namespace SharpIMPP
             {
                 stream.Flush();
                 //stream.Close();
+#if WINDOWS
                 SslStream ss = new SslStream(stream);
                 ss.AuthenticateAsClient(srvRec.NameTarget);
                 stream = new BigEndianStream(ss);
+#elif NETFX_CORE
+                sock.UpgradeToSslAsync(SocketProtectionLevel.Ssl, new HostName(srvRec.NameTarget)).AsTask().Wait();
+#endif
             }
 
             tp = new TLVPacket();
@@ -168,6 +193,8 @@ namespace SharpIMPP
             };
             tp.Write(stream);
 
+            stream.Flush();
+
             tp.Read(stream);
             WriteDebugLine("Authenticate: " + tp);
 
@@ -177,6 +204,9 @@ namespace SharpIMPP
             tp.Flags = Globals.MF_REQUEST;
             tp.SequenceNumber = SeqNum;
             string os = "Windows";
+            string arch = "Unknown";
+            string machine = "Unknown";
+#if WINDOWS
             switch (Environment.OSVersion.Platform)
             {
                 case PlatformID.MacOSX:
@@ -186,20 +216,42 @@ namespace SharpIMPP
                     os = "Unix";
                     break;
             }
+            arch = Environment.Is64BitOperatingSystem ? "amd64" : "i386";
+            machine = Environment.MachineName;
+#elif NETFX_CORE
+            switch (System.CPU.NativeInfo.ProcessorArchitecture)
+            {
+                case ProcessorArchitecture.INTEL:
+                    arch = "i386";
+                    break;
+                case ProcessorArchitecture.IA32_ON_WIN64:
+                    arch = "amd64";
+                    break;
+                default:
+                    arch = System.CPU.NativeInfo.ProcessorArchitecture.ToString().ToLower();
+                    break;
+            }
+            var hostnames = Windows.Networking.Connectivity.NetworkInformation.GetHostNames();
+            foreach (var hostname in hostnames)
+            {
+                machine = hostname.RawName;
+            }
+#endif
             tp.Block = new TLV[] {
                 new StringTLV() { TLVType = 0x0001, Value = "SharpIMPP" } , //Client name
                 new StringTLV() { TLVType = 0x0002, Value = os } , //OS Name
-                new StringTLV() { TLVType = 0x0004, Value = Environment.Is64BitOperatingSystem ? "amd64" : "i386" } , //Processor architecture
+                new StringTLV() { TLVType = 0x0004, Value = arch } , //Processor architecture
                 new TLV() { TLVType = 0x0005, Value = new byte[] { 0x00, 0x01 } } , //Client version
                 new TLV() { TLVType = 0x0006, Value = new byte[] { 0x00, 0x01 } } , //Build Number
-                new StringTLV() { TLVType = 0x0008, Value = Environment.MachineName } , //Machine name
+                new StringTLV() { TLVType = 0x0008, Value = machine } , //Machine name
                 new TLV() { TLVType = 0x000b, Value = new byte[] { 0x00, 0x01 } } , //Status
                 new TLV() { TLVType = 0x0010, Value = new byte[] { 0x01 } } , //IS_STATUS_AUTOMATIC
                 new TLV() { TLVType = 0x000d, Value = new byte[] { 0x00, 0x01, 0x00, 0x02 } } , //Capabilities
-                new StringTLV() { TLVType = 0x0007, Value = "SharpIMPP/"+Environment.OSVersion.Platform.ToString()+" 1.0.0.1" } , //Description
+                new StringTLV() { TLVType = 0x0007, Value = "SharpIMPP/"+os+" 1.0.0.1" } , //Description
             };
             tp.Write(stream);
 
+            stream.Flush();
 
             tp.Read(stream);
             WriteDebugLine("Device bind: " + tp);
@@ -219,16 +271,20 @@ namespace SharpIMPP
                 }
                 else if (t.TLVType == (ushort)DeviceTypes.TTupleType.DEVICE_NAME)
                 {
-                    this.DeviceName = Encoding.UTF8.GetString(t.Value);
+                    this.DeviceName = Encoding.UTF8.GetString(t.Value, 0, t.Value.Length);
                 }
                 else if (t.TLVType == (ushort)DeviceTypes.TTupleType.SERVER)
                 {
-                    IP = Encoding.UTF8.GetString(t.Value);
+                    IP = Encoding.UTF8.GetString(t.Value, 0, t.Value.Length);
                 }
             }
             if (reconnect && IP != null)
             {
+#if WINDOWS
                 tcpClient.GetStream().Dispose();
+#elif NETFX_CORE
+                sock.Dispose();
+#endif
                 WriteDebugLine("Reconnecting to " + IP);
                 connectInThread(UserName, UserDomain, Password, IP);
                 return;
@@ -244,6 +300,7 @@ namespace SharpIMPP
             tp.Block = new TLV[] { };
             tp.Write(stream);
 
+            stream.Flush();
 
             tp.Read(stream);
             WriteDebugLine("Lists get: " + tp);
@@ -252,7 +309,7 @@ namespace SharpIMPP
                 List<ContactListItem> contacts = new List<ContactListItem>();
                 foreach (TLV t in tp.Block)
                 {
-                    contacts.Add(new ContactListItem() { ContactType = (ListTypes.TTupleType)t.TLVType, ContactName = Encoding.UTF8.GetString(t.Value) });
+                    contacts.Add(new ContactListItem() { ContactType = (ListTypes.TTupleType)t.TLVType, ContactName = Encoding.UTF8.GetString(t.Value, 0, t.Value.Length) });
                 }
                 RaiseEventOnUIThread(this.ListReceived, new object[] { this, new ListEventArgs() { ContactList = contacts } });
 
@@ -267,6 +324,7 @@ namespace SharpIMPP
             tp.Block = new TLV[] { };
             tp.Write(stream);
 
+            stream.Flush();
 
             tp.Read(stream);
             WriteDebugLine("Group chats: " + tp);
@@ -278,6 +336,7 @@ namespace SharpIMPP
             tp.SequenceNumber = SeqNum;
             tp.Write(stream);
 
+            stream.Flush();
 
             tp.Read(stream);
             WriteDebugLine("Offline IMs: " + tp);
@@ -290,7 +349,7 @@ namespace SharpIMPP
                 }
                 else if (t.TLVType == (ushort)IMTypes.TTupleType.OFFLINE_MESSAGE)
                 {
-                    WriteDebugLine("Offline message: " + Encoding.UTF8.GetString(t.Value));
+                    WriteDebugLine("Offline message: " + Encoding.UTF8.GetString(t.Value, 0, t.Value.Length));
                 }
             }
 
@@ -304,6 +363,7 @@ namespace SharpIMPP
             };
             tp.Write(stream);
 
+            stream.Flush();
 
             tp.Read(stream);
             WriteDebugLine("Deleted offline IMs: " + tp);
@@ -317,13 +377,17 @@ namespace SharpIMPP
             tp.Block = new TLV[0];
             tp.Write(stream);
 
+            stream.Flush();
 
             //tp.Read(stream);
             //WriteDebugLine("Presence set: " + tp);
 
-
+#if WINDOWS
             Thread pingThread = new Thread(new ThreadStart(doPing));
             pingThread.Start();
+#elif NETFX_CORE
+            Task.Run(() => { doPing(); });
+#endif
             while (stream.CanRead)
             {
                 tp = new TLVPacket();
@@ -349,17 +413,17 @@ namespace SharpIMPP
                     {
                         if (t.TLVType == (ushort)PresenceTypes.TTupleType.NICKNAME)
                         {
-                            csea.Nick = Encoding.UTF8.GetString(t.Value);
+                            csea.Nick = Encoding.UTF8.GetString(t.Value, 0, t.Value.Length);
                             str += " Nick: " + csea.Nick;
                         }
                         else if (t.TLVType == (ushort)PresenceTypes.TTupleType.FROM)
                         {
-                            csea.Username = Encoding.UTF8.GetString(t.Value);
+                            csea.Username = Encoding.UTF8.GetString(t.Value, 0, t.Value.Length);
                             str += " Username: " + csea.Username;
                         }
                         else if (t.TLVType == 16385)
                         {
-                            str += " Email: " + Encoding.UTF8.GetString(t.Value);
+                            str += " Email: " + Encoding.UTF8.GetString(t.Value, 0, t.Value.Length);
                         }
                         else if (t.TLVType == (ushort)PresenceTypes.TTupleType.STATUS)
                         {
@@ -368,7 +432,7 @@ namespace SharpIMPP
                         }
                         else if (t.TLVType == (ushort)PresenceTypes.TTupleType.STATUS_MESSAGE)
                         {
-                            csea.StatusMessage = Encoding.UTF8.GetString(t.Value);
+                            csea.StatusMessage = Encoding.UTF8.GetString(t.Value, 0, t.Value.Length);
                             str += " Message: " + csea.StatusMessage;
                         }
                     }
@@ -391,15 +455,15 @@ namespace SharpIMPP
                     {
                         if (t.TLVType == (ushort)IMTypes.TTupleType.FROM)
                         {
-                            from = Encoding.UTF8.GetString(t.Value);
+                            from = Encoding.UTF8.GetString(t.Value, 0, t.Value.Length);
                         }
                         else if (t.TLVType == (ushort)IMTypes.TTupleType.TO)
                         {
-                            to = Encoding.UTF8.GetString(t.Value);
+                            to = Encoding.UTF8.GetString(t.Value, 0, t.Value.Length);
                         }
                         else if (t.TLVType == (ushort)IMTypes.TTupleType.MESSAGE_CHUNK)
                         {
-                            msg = Encoding.UTF8.GetString(t.Value);
+                            msg = Encoding.UTF8.GetString(t.Value, 0, t.Value.Length);
                         }
                     }
                     WriteDebugLine("Chat message from " + from + " to " + to + ": " + msg);
@@ -433,8 +497,13 @@ namespace SharpIMPP
                 tp.BlockSize = 0;
                 tp.Write(stream);
 
+                stream.Flush();
                 WriteDebugLine("Ping");
+#if WINDOWS
                 Thread.Sleep(120000);
+#elif NETFX_CORE
+                new System.Threading.ManualResetEvent(false).WaitOne(120000);
+#endif
             }
         }
         public void Disconnect()
@@ -478,6 +547,7 @@ namespace SharpIMPP
         {
             foreach (Delegate d in theEvent.GetInvocationList())
             {
+#if WINDOWS
                 ISynchronizeInvoke syncer = d.Target as ISynchronizeInvoke;
                 if (syncer == null)
                 {
@@ -487,6 +557,9 @@ namespace SharpIMPP
                 {
                     syncer.BeginInvoke(d, args);  // cleanup omitted
                 }
+#elif NETFX_CORE
+                d.DynamicInvoke(args);
+#endif
             }
         }
         public static void WriteDebugLine(object o)

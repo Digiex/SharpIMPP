@@ -43,7 +43,7 @@ namespace SharpIMPP.Net.Packets
             else
             {
                 uint left = BlockSize;
-                ArrayList bList = new ArrayList();
+                List<TLV> bList = new List<TLV>();
                 while (left > 0)
                 {
                     var b = new TLV();
@@ -51,7 +51,7 @@ namespace SharpIMPP.Net.Packets
                     bList.Add(b);
                     left -= b.GetSize();
                 }
-                Block = (TLV[])bList.ToArray(typeof(TLV));
+                Block = bList.ToArray();
             }
             //byte[] block = s.ReadBytes(BlockSize);
             //Console.WriteLine(BitConverter.ToString(block));
