@@ -38,7 +38,8 @@ namespace TestApp
             {
                 Console.WriteLine(pair.ContactType.ToString() + ": " + pair.ContactName);
                 var lvi = new ListViewItem(pair.ContactName);
-                switch(pair.ContactType){
+                switch (pair.ContactType)
+                {
                     case SharpIMPP.Enums.ListTypes.TTupleType.ALLOW_ADDRESS:
                         lvi.Group = allowG;
                         break;
@@ -63,7 +64,21 @@ namespace TestApp
 
         private void sendButton_Click(object sender, EventArgs e)
         {
-            si.SendChat(contactList.SelectedItems[0].Text, messageBox.Text);
+            si.SendChat(toLabel.Text, messageBox.Text);
+        }
+
+        private void contactList_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                toLabel.Text = contactList.SelectedItems[0].Text;
+                sendButton.Enabled = true;
+            }
+            catch (Exception)
+            {
+                toLabel.Text = "-";
+                sendButton.Enabled = false;
+            }
         }
     }
 }

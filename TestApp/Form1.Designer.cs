@@ -37,6 +37,8 @@
             this.label3 = new System.Windows.Forms.Label();
             this.messageBox = new System.Windows.Forms.TextBox();
             this.sendButton = new System.Windows.Forms.Button();
+            this.label4 = new System.Windows.Forms.Label();
+            this.toLabel = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // usernameBox
@@ -91,6 +93,7 @@
             this.contactList.TabIndex = 5;
             this.contactList.UseCompatibleStateImageBehavior = false;
             this.contactList.View = System.Windows.Forms.View.List;
+            this.contactList.SelectedIndexChanged += new System.EventHandler(this.contactList_SelectedIndexChanged);
             // 
             // label3
             // 
@@ -110,6 +113,7 @@
             // 
             // sendButton
             // 
+            this.sendButton.Enabled = false;
             this.sendButton.Location = new System.Drawing.Point(547, 379);
             this.sendButton.Name = "sendButton";
             this.sendButton.Size = new System.Drawing.Size(75, 23);
@@ -118,11 +122,31 @@
             this.sendButton.UseVisualStyleBackColor = true;
             this.sendButton.Click += new System.EventHandler(this.sendButton_Click);
             // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(246, 360);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(23, 13);
+            this.label4.TabIndex = 9;
+            this.label4.Text = "To:";
+            // 
+            // toLabel
+            // 
+            this.toLabel.AutoSize = true;
+            this.toLabel.Location = new System.Drawing.Point(275, 360);
+            this.toLabel.Name = "toLabel";
+            this.toLabel.Size = new System.Drawing.Size(10, 13);
+            this.toLabel.TabIndex = 10;
+            this.toLabel.Text = "-";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(636, 411);
+            this.Controls.Add(this.toLabel);
+            this.Controls.Add(this.label4);
             this.Controls.Add(this.sendButton);
             this.Controls.Add(this.messageBox);
             this.Controls.Add(this.label3);
@@ -151,5 +175,7 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.TextBox messageBox;
         private System.Windows.Forms.Button sendButton;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label toLabel;
     }
 }
