@@ -58,7 +58,7 @@ namespace SharpIMPP.Net.Packets
                 Length = s.ReadUShort();
             }
             //Value = new byte[Length];
-            Value = s.ReadBytesReversed((int)Length);
+            Value = s.ReadBytesReversed(Length);
         }
         public void Write(BigEndianStream s)
         {

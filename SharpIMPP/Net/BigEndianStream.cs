@@ -401,10 +401,16 @@ namespace Chraft.Net
             return Reader.ReadInt64();
         }
 
-        public byte[] ReadBytesReversed(int Count)
+        public byte[] ReadBytesReversed(uint Count)
         {
-            Reader.LoadAsync((uint)Count).AsTask<uint>().Wait();
             byte[] val = new byte[Count];
+            uint left = Count;
+            while (left > 0)
+            {
+                Task<uint> tk = Reader.LoadAsync(left).AsTask<uint>();
+                tk.Wait();
+                left -= tk.Result;
+            }
             Reader.ReadBytes(val);
             return val;
         }
