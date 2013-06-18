@@ -78,6 +78,15 @@ namespace SharpIMPP
 
             internal TLVPacket Packet { get; set; }
         }
+
+        public event TypingEvent ContactTyping;
+        public delegate void TypingEvent(object sender, TypingEventArgs e);
+        public class TypingEventArgs : EventArgs
+        {
+            public string From { get; set; }
+            public bool IsTyping { get; set; }
+            internal TLVPacket Packet { get; set; }
+        }
         #endregion
 
         private BigEndianStream stream;
@@ -85,6 +94,8 @@ namespace SharpIMPP
         private string username;
 
         public string DeviceName { get; private set; }
+
+        private List<string> contactsTyping = new List<string>();
 
         public IMPPClient()
         {
@@ -219,6 +230,7 @@ namespace SharpIMPP
             arch = Environment.Is64BitOperatingSystem ? "amd64" : "i386";
             machine = Environment.MachineName;
 #elif NETFX_CORE
+            os = "WinRT";
             switch (System.CPU.NativeInfo.ProcessorArchitecture)
             {
                 case ProcessorArchitecture.INTEL:
@@ -234,7 +246,11 @@ namespace SharpIMPP
             var hostnames = Windows.Networking.Connectivity.NetworkInformation.GetHostNames();
             foreach (var hostname in hostnames)
             {
-                machine = hostname.RawName;
+                WriteDebugLine("Machine: " + hostname.RawName);
+                if (!hostname.RawName.Contains(".") && !hostname.RawName.Contains(":"))
+                {
+                    machine = hostname.RawName;
+                }
             }
 #endif
             tp.Block = new TLV[] {
@@ -247,7 +263,7 @@ namespace SharpIMPP
                 new TLV() { TLVType = 0x000b, Value = new byte[] { 0x00, 0x01 } } , //Status
                 new TLV() { TLVType = 0x0010, Value = new byte[] { 0x01 } } , //IS_STATUS_AUTOMATIC
                 new TLV() { TLVType = 0x000d, Value = new byte[] { 0x00, 0x01, 0x00, 0x02 } } , //Capabilities
-                new StringTLV() { TLVType = 0x0007, Value = "SharpIMPP/"+os+" 1.0.0.1" } , //Description
+                new StringTLV() { TLVType = 0x0007, Value = "SharpIMPP/"+os+"-"+arch+" 1.0.0.1" } , //Description
             };
             tp.Write(stream);
 
@@ -451,6 +467,7 @@ namespace SharpIMPP
                     string from = "";
                     string to = "";
                     string msg = "";
+                    bool typingevent = false;
                     foreach (TLV t in tp.Block)
                     {
                         if (t.TLVType == (ushort)IMTypes.TTupleType.FROM)
@@ -465,11 +482,44 @@ namespace SharpIMPP
                         {
                             msg = Encoding.UTF8.GetString(t.Value, 0, t.Value.Length);
                         }
+                        else if (t.TLVType == (ushort)IMTypes.TTupleType.CAPABILITY && t.Value[1] == 2)
+                        {
+                            typingevent = true;
+                        }
                     }
-                    WriteDebugLine("Chat message from " + from + " to " + to + ": " + msg);
-                    if (ChatReceived != null)
+                    if (typingevent)
                     {
-                        RaiseEventOnUIThread(this.ChatReceived, new object[] { this, new ChatEventArgs() { From = from, To = to, OfflineMessage = false, Message = msg, Packet = tp } });
+                        bool isTyping = true;
+                        if (contactsTyping.Contains(from))
+                        {
+                            isTyping = false;
+                            contactsTyping.Remove(from);
+                        }
+                        else
+                        {
+                            contactsTyping.Add(from);
+                        }
+                        WriteDebugLine(from + (isTyping ? " started" : " ended") + " typing");
+                        if (ContactTyping != null)
+                        {
+                            RaiseEventOnUIThread(this.ContactTyping, new object[] { this, new TypingEventArgs() { From = from, Packet = tp, IsTyping = isTyping } });
+                        }
+                    }
+                    else
+                    {
+                        WriteDebugLine("Chat message from " + from + " to " + to + ": " + msg);
+                        if (contactsTyping.Contains(from))
+                        {
+                            contactsTyping.Remove(from);
+                            if (ContactTyping != null)
+                            {
+                                RaiseEventOnUIThread(this.ContactTyping, new object[] { this, new TypingEventArgs() { From = from, Packet = tp, IsTyping = false } });
+                            }
+                        }
+                        if (ChatReceived != null)
+                        {
+                            RaiseEventOnUIThread(this.ChatReceived, new object[] { this, new ChatEventArgs() { From = from, To = to, OfflineMessage = false, Message = msg, Packet = tp } });
+                        }
                     }
                 }
                 else if (!error)

@@ -46,6 +46,22 @@ namespace TestApp.WinRT
             ic.ChatReceived += ic_ChatReceived;
             ic.ContactStatusChanged += ic_ContactStatusChanged;
             ic.ListReceived += ic_ListReceived;
+            ic.ContactTyping += ic_ContactTyping;
+        }
+
+        void ic_ContactTyping(object sender, IMPPClient.TypingEventArgs e)
+        {
+            this.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                if (e.IsTyping)
+                {
+                    typingIndicatorBlock.Text = e.From + " is typing";
+                }
+                else
+                {
+                    typingIndicatorBlock.Text = "";
+                }
+            });
         }
 
         void ic_ListReceived(object sender, IMPPClient.ListEventArgs e)
