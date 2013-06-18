@@ -537,7 +537,7 @@ namespace SharpIMPP
                                 RaiseEventOnUIThread(this.ContactTyping, new object[] { this, new TypingEventArgs() { From = from, Packet = tp, IsTyping = isTyping } });
                             }
                         }
-                        else
+                        else if(msg != null && msg.Length > 0)
                         {
                             WriteDebugLine("Chat message from " + from + " to " + to + ": " + msg);
                             if (contactsTyping.Contains(from))
