@@ -361,49 +361,47 @@ namespace Chraft.Net
 
         public byte ReadByte()
         {
-            Reader.LoadAsync(1).AsTask<uint>().Wait();
+            LoadBytes(1);
             return Reader.ReadByte();
         }
 
         public ushort ReadUShort()
         {
-            Reader.LoadAsync(2).AsTask<uint>().Wait();
+            LoadBytes(2);
             return Reader.ReadUInt16();
         }
 
         public uint ReadUInt()
         {
-            Reader.LoadAsync(4).AsTask<uint>().Wait();
+            LoadBytes(4);
             return Reader.ReadUInt32();
         }
 
         public ulong ReadULong()
         {
-            Reader.LoadAsync(8).AsTask<uint>().Wait();
+            LoadBytes(8);
             return Reader.ReadUInt64();
         }
 
         public short ReadShort()
         {
-            Reader.LoadAsync(2).AsTask<uint>().Wait();
+            LoadBytes(2);
             return Reader.ReadInt16();
         }
 
         public int ReadInt()
         {
-            Reader.LoadAsync(4).AsTask<uint>().Wait();
+            LoadBytes(4);
             return Reader.ReadInt32();
         }
 
         public long ReadLong()
         {
-            Reader.LoadAsync(8).AsTask<uint>().Wait();
+            LoadBytes(8);
             return Reader.ReadInt64();
         }
-
-        public byte[] ReadBytesReversed(uint Count)
+        private void LoadBytes(uint Count)
         {
-            byte[] val = new byte[Count];
             uint left = Count;
             while (left > 0)
             {
@@ -411,6 +409,12 @@ namespace Chraft.Net
                 tk.Wait();
                 left -= tk.Result;
             }
+        }
+
+        public byte[] ReadBytesReversed(uint Count)
+        {
+            byte[] val = new byte[Count];
+            LoadBytes(Count);
             Reader.ReadBytes(val);
             return val;
         }
@@ -428,17 +432,14 @@ namespace Chraft.Net
             //return Buffer.Length;
         }
 
-        public int Read(byte[] Buffer, int Offset, int Len)
+        public void Read(byte[] Buffer, int Offset, int Len)
         {
             if (Offset != 0 || Len != Buffer.Length) throw new ArgumentException("Can only read whole byte array");
-            Task<uint> Tk = Reader.LoadAsync((uint)Len).AsTask<uint>();
-            Tk.Wait();
-            uint Count = Tk.Result;
-            for (int i = 0; i < Count; i++)
+            LoadBytes((uint)Len);
+            for (int i = 0; i < Len; i++)
             {
                 Buffer[i] = Reader.ReadByte();
             }
-            return (int)Count;
         }
 
         public bool CanRead { get { return Reader != null; } }
