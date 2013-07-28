@@ -21,6 +21,9 @@ using System.Threading.Tasks;
 using Windows.Networking.Sockets;
 using Windows.Networking;
 #endif
+#if WINDOWS_PHONE
+using Microsoft.Phone.Info;
+#endif
 
 namespace SharpIMPP
 {
@@ -248,7 +251,7 @@ namespace SharpIMPP
             }
             arch = Environment.Is64BitOperatingSystem ? "amd64" : "i386";
             machine = Environment.MachineName;
-#elif NETFX_CORE
+#elif WINRT
             os = "WinRT";
             switch (System.CPU.NativeInfo.ProcessorArchitecture)
             {
@@ -271,6 +274,10 @@ namespace SharpIMPP
                     machine = hostname.RawName;
                 }
             }
+#elif WINDOWS_PHONE
+            os = "Windows Phone";
+            arch = "arm";
+            machine = DeviceStatus.DeviceName;
 #endif
             tp.Block = new TLV[] {
                 new StringTLV() { TLVType = 0x0001, Value = "SharpIMPP" } , //Client name

@@ -20,13 +20,13 @@ using System.Linq;
 using System.Text;
 #if WINDOWS
 using System.Net.Sockets;
+using System.IO.Compression;
 #elif NETFX_CORE
 using Windows.Networking.Sockets;
 using Windows.Storage.Streams;
 using System.Threading.Tasks;
 #endif
 using System.IO;
-using System.IO.Compression;
 
 namespace Chraft.Net
 {
