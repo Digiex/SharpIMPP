@@ -64,7 +64,7 @@ namespace Chraft.Net
             return (Input);
         }
 
-        public byte[] ReadBytesReversed(int Count)
+        public byte[] ReadBytesReversed(uint Count)
         {
             byte[] Input = new byte[Count];
 
